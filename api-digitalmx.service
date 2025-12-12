@@ -1,0 +1,33 @@
+[Unit]
+Description=API DIGITALMX Flask Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/api-digitalmx
+ExecStart=/var/www/api-digitalmx/venv/bin/gunicorn --config gunicorn_config.py app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+Restart=always
+RestartSec=10
+
+# Límites de recursos
+LimitNOFILE=65535
+LimitNPROC=512
+
+# Seguridad
+PrivateTmp=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/api-digitalmx/logs /var/www/api-digitalmx/uploads /var/www/api-digitalmx/backups
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=api-digitalmx
+
+[Install]
+WantedBy=multi-user.target

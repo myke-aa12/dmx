@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proveedor - DIGITALMX</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+      min-height: 100vh;
+      padding: 30px 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .btn-regresar {
+      position: absolute;
+      right: 0;
+      top: 0;
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid rgba(119, 2, 2, 0.603);
+      color: rgba(119, 2, 2, 0.603);
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.25s ease;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .btn-regresar:hover {
+      background: rgba(119, 2, 2, 0.05);
+      transform: scale(1.05);
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #611232;
+      font-weight: 700;
+    }
+
+    .filtros-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+    }
+
+    .filtros-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: flex-end;
+    }
+
+    .filtro-grupo {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filtro-grupo label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .filtro-grupo select,
+    .filtro-grupo input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .filtro-grupo select:focus,
+    .filtro-grupo input:focus {
+      border-color: #611232;
+      box-shadow: 0 0 0 2px rgba(97, 18, 50, 0.2);
+    }
+    
+
+
+    /* TABLA DESKTOP */
+    .tabla-container {
+      overflow-x: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    thead th {
+      background: #f8f9fa;
+      padding: 16px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    tbody td {
+      padding: 16px;
+      border-bottom: 1px solid #f1f3f5;
+      font-size: 14px;
+    }
+    
+    tbody tr {
+      user-select: text;
+      cursor: default;
+      transition: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tbody tr:hover {
+      background-color: inherit !important;
+    }
+
+    tbody tr.selected {
+      background-color: inherit !important;
+      color: inherit;
+    }
+
+    .btn-detalles {
+      padding: 8px 16px;
+      background: #611232;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: 0.2s ease;
+    }
+
+    .btn-detalles:hover {
+      background: #7d1b43;
+      transform: scale(1.05);
+    }
+
+    .vacio {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    @media (max-width: 768px) {
+        /* Mobile styles remain the same */
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 10000;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+      position: relative;
+      animation: modalIn 0.25s ease-out;
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      border: none;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+      color: #444;
+      transition: 0.2s;
+    }
+
+    .modal-close:hover {
+      transform: scale(1.2);
+      color: #000;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #611232;
+    }
+
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .detalle-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detalle-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .detalle-valor {
+      color: #333;
+    }
+
+    /* Botones de acción */
+    .acciones-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-procesar {
+      padding: 8px 16px;
+      background: #611232;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: 0.2s ease;
+    }
+
+    .btn-procesar:hover {
+      background: #7d1b43;
+      transform: scale(1.05);
+    }
+
+    .btn-accion-icon {
+      width: auto;
+      height: auto;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+    }
+
+    .btn-accion-icon:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-archivo {
+      background: #4caf50;
+      color: white;
+    }
+
+    .btn-archivo:hover {
+      background: #45a049;
+    }
+
+    .btn-comentar {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .btn-comentar:hover {
+      background: #ffb300;
+    }
+
+    .btn-cancelar {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-cancelar:hover {
+      background: #da190b;
+    }
+
+    .no-disponible {
+      padding: 8px 16px;
+      background: #f5f5f5;
+      color: #999;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Pedidos</h1>
+      <button onclick="cerrarSesion()" class="btn-regresar" style="cursor: pointer;">🚪 Cerrar Sesión</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros-section">
+      <div class="filtros-row">
+        <div class="filtro-grupo">
+          <label for="filtroTramite">Filtrar por trámite</label>
+          <select id="filtroTramite">
+            <option value="">Todos los trámites</option>
+            {% for tramite in tramites %}
+            <option value="{{ tramite.tramite }}">{{ tramite.tramite }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filtro-grupo">
+          <label for="filtroIdentificador">Ingresar identificador</label>
+          <input type="text" id="filtroIdentificador" placeholder="Ej: ABCD123456HDFGRS09">
+          </div>
+          <div class="filtro-grupo" style="display:flex;align-items:end;">
+            <button id="btnLimpiarFiltros" type="button" style="margin-top:24px;padding:10px 18px;background:#611232;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Limpiar</button>
+        </div>
+
+      </div>
+
+
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-container">
+      <table id="tablaPedidos">
+        <thead>
+          <tr>
+            <th>Identificador</th>
+            <th>Trámite</th>
+            <th>Fecha</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tablaPedidosBody">
+          <tr>
+            <td colspan="4" class="vacio">Cargando pedidos...</td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- PAGINACIÓN -->
+      <div id="paginacionPedidos" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:18px;margin-top:8px;"></div>
+    </div>
+
+  <!-- SECCIÓN COLAPSABLE DE TRÁMITES PROCESADOS -->
+  <div style="margin-top:32px;">
+    <button id="toggleProcesadosBtn" style="padding:10px 18px;background:#611232;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Mostrar/Ocultar Trámites Procesados</button>
+    <div id="procesadosSection" style="display:none;margin-top:18px;">
+      <div style="margin-bottom:16px;font-size:18px;font-weight:600;color:#611232;">
+        Tramites Procesados: <span id="procesadosTotal">0</span>
+      </div>
+      <div class="filtros-row" style="margin-bottom:12px;">
+        <div class="filtro-grupo">
+          <label for="filtroProcesadoTramite">Filtrar por trámite</label>
+          <select id="filtroProcesadoTramite">
+            <option value="">Todos los trámites</option>
+          </select>
+        </div>
+        <div class="filtro-grupo">
+          <label for="filtroProcesadoTexto">Buscar por texto</label>
+          <input type="text" id="filtroProcesadoTexto" placeholder="Buscar...">
+        </div>
+        <div class="filtro-grupo" style="display:flex;align-items:end;gap:8px;">
+          <button id="btnLimpiarProcesadosFiltros" type="button" style="margin-top:24px;padding:10px 18px;background:#611232;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Limpiar</button>
+          <button id="btnActualizarProcesados" type="button" style="margin-top:24px;padding:10px 18px;background:#28a745;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Actualizar</button>
+        </div>
+      </div>
+      <div class="tabla-container">
+        <table id="tablaProcesados">
+          <thead>
+            <tr>
+              <th>Identificador</th>
+              <th>Trámite</th>
+              <th>Solicitud</th>
+              <th>Atención</th>
+            </tr>
+          </thead>
+          <tbody id="tablaProcesadosBody">
+            <tr><td colspan="4" class="vacio">Cargando trámites procesados...</td></tr>
+          </tbody>
+        </table>
+        <div id="paginacionProcesados" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:18px;margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALLES -->
+  <div id="detallesModal" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+      <h2 class="modal-title">Detalles del Pedido</h2>
+      <div class="modal-content" id="modalContent">
+        <!-- Se llenará dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+    <!-- MODAL DE COMENTARIO / TERMINAR -->
+    <div id="comentarioModal" class="modal-overlay">
+      <div class="modal-card">
+        <button class="modal-close" onclick="cerrarComentarioModal()">✕</button>
+        <h2 class="modal-title">Si el trámite no procede, redacte el motivo</h2>
+        <div class="modal-content">
+          <textarea id="comentarioTexto" placeholder="Escribe el motivo aquí..." style="width:100%; min-height:140px; padding:12px; border:1px solid #e0e0e0; border-radius:8px;"></textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:12px; gap:8px;">
+            <button class="btn btn-secondary" onclick="cerrarComentarioModal()">Cancelar</button>
+            <button id="btnTerminarPedido" class="btn btn-primary">Terminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // Función para cerrar sesión
+    async function cerrarSesion() {
+      try {
+        const response = await fetch('{{ url_for("logout") }}?redirect=proveedor_login', { method: 'POST' });
+        if (response.ok) {
+          window.location.href = '/app/resources/proveedor';
+        }
+      } catch (error) {
+        window.location.href = '/app/resources/proveedor';
+      }
+    }
+
+    let pedidosData = [];
+    let estadoActivo = null;
+    let proveedorIdActual = null;
+    let selectedIds = new Set();
+    let lastSelectedId = null;
+
+    // PAGINACIÓN
+    let paginaActual = 1;
+    let pedidosPorPagina = 25;
+    let pedidosFiltrados = [];
+    let totalPedidos = 0;
+
+    // Cargar pedidos al abrir la página
+    async function cargarPedidos(page = 1) {
+      try {
+        // Obtener parámetros de filtro
+        const tramite = document.getElementById('filtroTramite').value;
+        const identificador = document.getElementById('filtroIdentificador').value.toUpperCase();
+        
+        let url = '{{ url_for('obtener_todos_pedidos') }}?page=' + page;
+        if (tramite) {
+          url += '&tramite=' + encodeURIComponent(tramite);
+        }
+        if (identificador) {
+          url += '&identificador=' + encodeURIComponent(identificador);
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+          pedidosData = data.pedidos || [];
+          proveedorIdActual = data.proveedor_id;
+          totalPedidos = data.total;
+          paginaActual = data.page;
+          pedidosPorPagina = data.per_page;
+          mostrarPedidos(pedidosData, totalPedidos);
+        } else {
+          document.getElementById('tablaPedidosBody').innerHTML = 
+            '<tr><td colspan="4" class="vacio">Error al cargar los pedidos</td></tr>';
+        }
+      } catch (error) {
+        console.error('Error al cargar pedidos:', error);
+        document.getElementById('tablaPedidosBody').innerHTML = 
+          '<tr><td colspan="4" class="vacio">Error al cargar los pedidos</td></tr>';
+      }
+    }
+
+    function mostrarPedidos(pedidos, total) {
+      const tbody = document.getElementById('tablaPedidosBody');
+      
+      if (pedidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="vacio">No hay pedidos</td></tr>';
+        document.getElementById('paginacionPedidos').innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = pedidos.map(pedido => {
+        const disponible = pedido.estado === 1 && !pedido.asignado_a;
+        const esMio = pedido.asignado_a === proveedorIdActual;
+        let contenidoAccion = '';
+        if (disponible) {
+          contenidoAccion = `<button class="btn-procesar" onclick="reservarPedido(this, ${pedido.id})">Procesar</button>`;
+        } else if (esMio) {
+          contenidoAccion = `
+            <button class="btn-accion-icon btn-archivo" title="Subir archivo" onclick="seleccionarArchivo(${pedido.id})">Subir Archivo</button>
+            <button class="btn-accion-icon btn-comentar" title="Comentar" onclick="abrirComentarioModal(${pedido.id})">Comentar</button>
+            <button class="btn-accion-icon btn-cancelar" title="Cancelar" onclick="liberarReserva(${pedido.id})">Cancelar</button>
+          `;
+        } else {
+          contenidoAccion = `<span class="no-disponible">No disponible</span>`;
+        }
+        return `
+          <tr data-id="${pedido.id}" class="${selectedIds.has(pedido.id) ? 'selected' : ''}">
+            <td>${pedido.identificador}</td>
+            <td>${pedido.tramite}</td>
+            <td>${pedido.fecha}</td>
+            <td>
+              <div class="acciones-container" id="acciones-${pedido.id}">
+                ${contenidoAccion}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Renderizar paginación
+      const totalPaginas = Math.max(1, Math.ceil(total / pedidosPorPagina));
+      const pagDiv = document.getElementById('paginacionPedidos');
+      let pagHtml = '';
+      if (totalPaginas > 1) {
+        pagHtml += `<button class="btn-paginacion" ${paginaActual === 1 ? 'disabled' : ''} onclick="cambiarPagina(${paginaActual - 1})" style="padding:8px 14px;background:#f0f0f0;border:1px solid #ddd;border-radius:6px;cursor:${paginaActual === 1 ? 'not-allowed' : 'pointer'};color:#333;font-weight:500;transition:all 0.2s;opacity:${paginaActual === 1 ? '0.5' : '1'}">← Anterior</button>`;
+        
+        for (let i = 1; i <= totalPaginas; i++) {
+          const isActive = i === paginaActual;
+          pagHtml += `<button class="btn-paginacion" onclick="cambiarPagina(${i})" style="padding:8px 12px;background:${isActive ? '#611232' : '#f0f0f0'};border:1px solid ${isActive ? '#611232' : '#ddd'};border-radius:6px;cursor:pointer;color:${isActive ? '#fff' : '#333'};font-weight:500;min-width:36px;transition:all 0.2s;${isActive ? 'box-shadow: 0 2px 8px rgba(97,18,50,0.3)' : ''}">${i}</button>`;
+        }
+        
+        pagHtml += `<button class="btn-paginacion" ${paginaActual === totalPaginas ? 'disabled' : ''} onclick="cambiarPagina(${paginaActual + 1})" style="padding:8px 14px;background:#f0f0f0;border:1px solid #ddd;border-radius:6px;cursor:${paginaActual === totalPaginas ? 'not-allowed' : 'pointer'};color:#333;font-weight:500;transition:all 0.2s;opacity:${paginaActual === totalPaginas ? '0.5' : '1'}">Siguiente →</button>`;
+      }
+      pagDiv.innerHTML = pagHtml;
+    }
+    
+    document.getElementById('tablaPedidosBody').addEventListener('click', function(e) {
+        const row = e.target.closest('tr');
+        if (!row || !row.dataset.id) return;
+
+        const rowId = parseInt(row.dataset.id, 10);
+        
+        // Stop propagation if a button inside the row was clicked
+        if (e.target.closest('button') || e.target.closest('a')) {
+            return;
+        }
+
+        if (e.shiftKey && lastSelectedId !== null) {
+            const rows = Array.from(document.querySelectorAll('#tablaPedidosBody tr'));
+            const lastIndex = rows.findIndex(r => parseInt(r.dataset.id, 10) === lastSelectedId);
+            const currentIndex = rows.findIndex(r => r.dataset.id == rowId);
+            const [start, end] = [lastIndex, currentIndex].sort((a, b) => a - b);
+            
+            rows.slice(start, end + 1).forEach(r => {
+                const id = parseInt(r.dataset.id, 10);
+                if (!selectedIds.has(id)) {
+                    selectedIds.add(id);
+                    r.classList.add('selected');
+                }
+            });
+        } else if (e.ctrlKey) {
+            if (selectedIds.has(rowId)) {
+                selectedIds.delete(rowId);
+                row.classList.remove('selected');
+            } else {
+                selectedIds.add(rowId);
+                row.classList.add('selected');
+            }
+        } else {
+            document.querySelectorAll('#tablaPedidosBody tr.selected').forEach(r => r.classList.remove('selected'));
+            selectedIds.clear();
+            selectedIds.add(rowId);
+            row.classList.add('selected');
+        }
+        
+        lastSelectedId = rowId;
+    });
+
+
+
+    async function reservarPedido(boton, pedidoId) {
+      try {
+        const response = await fetch('{{ url_for('reservar_pedido') }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pedido_id: pedidoId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          cargarPedidos();
+        } else {
+          cargarPedidos();
+          Swal.fire({
+            icon: 'warning',
+            title: 'No disponible',
+            text: data.message || 'Este pedido ya fue tomado por otro proveedor'
+          });
+        }
+      } catch (error) {
+        console.error('Error al reservar pedido:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Hubo un error al reservar el pedido'
+        });
+      }
+    }
+
+    function seleccionarArchivo(pedidoId) {
+      const fileInput = document.getElementById('archivoInput');
+      fileInput.dataset.pedidoId = pedidoId;
+      fileInput.click();
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const fileInput = document.getElementById('archivoInput');
+      if (fileInput) {
+        fileInput.addEventListener('change', async function(e){
+          const pedidoId = this.dataset.pedidoId;
+          const file = this.files[0];
+          if (!file) return;
+          const form = new FormData();
+          form.append('pedido_id', pedidoId);
+          form.append('file', file);
+          try {
+            const resp = await fetch('{{ url_for('subir_archivo') }}', { method: 'POST', body: form });
+            const data = await resp.json();
+            if (data.success) {
+              Swal.fire({ icon: 'success', title: 'Archivo subido' });
+              // Actualizar UI inmediato: mostrar 'No disponible' en la fila
+              const accionesDiv = document.getElementById('acciones-' + pedidoId);
+              if (accionesDiv) {
+                accionesDiv.innerHTML = '<span class="no-disponible">No disponible</span>';
+              }
+              cargarPedidos();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'No se pudo subir' });
+            }
+          } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error al subir archivo' });
+          } finally {
+            this.value = '';
+            delete this.dataset.pedidoId;
+          }
+        });
+      }
+    });
+
+    async function liberarReserva(pedidoId) {
+      try {
+        const resp = await fetch('{{ url_for('liberar_pedido') }}', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pedido_id: pedidoId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          Swal.fire({ icon: 'success', title: 'Reserva liberada' });
+          cargarPedidos();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'No se pudo liberar' });
+          cargarPedidos();
+        }
+      } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al comunicarse con el servidor' });
+      }
+    }
+
+    let comentarioPedidoId = null;
+    function abrirComentarioModal(pedidoId) {
+      comentarioPedidoId = pedidoId;
+      document.getElementById('comentarioTexto').value = '';
+      document.getElementById('comentarioModal').classList.add('active');
+    }
+
+    function cerrarComentarioModal() {
+      document.getElementById('comentarioModal').classList.remove('active');
+      comentarioPedidoId = null;
+    }
+
+    async function terminarPedido() {
+      const pedidoId = comentarioPedidoId;
+      const motivo = document.getElementById('comentarioTexto').value.trim();
+      if (!motivo) {
+        Swal.fire({ icon: 'warning', title: 'Escribe el motivo', text: 'Por favor describe por qué el trámite no procede.' });
+        return;
+      }
+      try {
+        const resp = await fetch('{{ url_for('terminar_pedido') }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pedido_id: pedidoId, motivo })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          cerrarComentarioModal();
+          const idx = pedidosData.findIndex(p => p.id === pedidoId);
+          if (idx !== -1) { pedidosData[idx].estado = 3; pedidosData[idx].resultado = motivo; }
+          // Actualizar UI inmediato: mostrar 'No disponible' en la fila
+          const accionesDiv = document.getElementById('acciones-' + pedidoId);
+          if (accionesDiv) {
+            accionesDiv.innerHTML = '<span class="no-disponible">No disponible</span>';
+          }
+          Swal.fire({ icon: 'success', title: 'Pedido terminado', text: data.message || 'OK' });
+        } else {
+          Swal.fire({ icon: 'error', title: 'Error', text: data.message || 'No se pudo terminar el pedido' });
+          cargarPedidos();
+        }
+      } catch (e) {
+        console.error('Error terminar pedido', e);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Error al comunicarse con el servidor' });
+      }
+    }
+    
+    document.getElementById('filtroTramite').addEventListener('change', function() {
+      paginaActual = 1;
+      cargarPedidos(1);
+    });
+    
+    document.getElementById('filtroIdentificador').addEventListener('input', function() {
+      paginaActual = 1;
+      cargarPedidos(1);
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const btn = document.getElementById('btnTerminarPedido');
+      if (btn) btn.addEventListener('click', terminarPedido);
+      // Botón Limpiar filtros
+      const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+      if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', function() {
+          document.getElementById('filtroTramite').value = '';
+          document.getElementById('filtroIdentificador').value = '';
+          paginaActual = 1;
+          cargarPedidos(1);
+        });
+      }
+    });
+
+    // Cambiar página
+    function cambiarPagina(nuevaPagina) {
+      paginaActual = nuevaPagina;
+      cargarPedidos(nuevaPagina);
+    }
+    
+    function cerrarModal() {
+      document.getElementById('detallesModal').classList.remove('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarPedidos);
+    // --- PROCESADOS ---
+    let procesadosData = [];
+    let procesadosFiltrados = [];
+    let procesadosPaginaActual = 1;
+    const procesadosPorPagina = 20;
+    let procesadosTramites = [];
+
+    function mostrarProcesados(procesados, total) {
+      const tbody = document.getElementById('tablaProcesadosBody');
+      if (procesados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="vacio">No hay trámites procesados</td></tr>';
+        document.getElementById('paginacionProcesados').innerHTML = '';
+        return;
+      }
+      tbody.innerHTML = procesados.map(p => `
+        <tr>
+          <td>${p.identificador}</td>
+          <td>${p.tramite}</td>
+          <td>${p.solicitud}</td>
+          <td>${p.atencion}</td>
+        </tr>
+      `).join('');
+      // Paginación
+      const totalPaginas = Math.max(1, Math.ceil(total / procesadosPorPagina));
+      const pagDiv = document.getElementById('paginacionProcesados');
+      let pagHtml = '';
+      if (totalPaginas > 1) {
+        pagHtml += `<button class="btn-paginacion" ${procesadosPaginaActual === 1 ? 'disabled' : ''} onclick="cambiarPaginaProcesados(${procesadosPaginaActual - 1})" style="padding:8px 14px;background:#f0f0f0;border:1px solid #ddd;border-radius:6px;cursor:${procesadosPaginaActual === 1 ? 'not-allowed' : 'pointer'};color:#333;font-weight:500;transition:all 0.2s;opacity:${procesadosPaginaActual === 1 ? '0.5' : '1'}">← Anterior</button>`;
+        
+        for (let i = 1; i <= totalPaginas; i++) {
+          const isActive = i === procesadosPaginaActual;
+          pagHtml += `<button class="btn-paginacion" onclick="cambiarPaginaProcesados(${i})" style="padding:8px 12px;background:${isActive ? '#611232' : '#f0f0f0'};border:1px solid ${isActive ? '#611232' : '#ddd'};border-radius:6px;cursor:pointer;color:${isActive ? '#fff' : '#333'};font-weight:500;min-width:36px;transition:all 0.2s;${isActive ? 'box-shadow: 0 2px 8px rgba(97,18,50,0.3)' : ''}">${i}</button>`;
+        }
+        
+        pagHtml += `<button class="btn-paginacion" ${procesadosPaginaActual === totalPaginas ? 'disabled' : ''} onclick="cambiarPaginaProcesados(${procesadosPaginaActual + 1})" style="padding:8px 14px;background:#f0f0f0;border:1px solid #ddd;border-radius:6px;cursor:${procesadosPaginaActual === totalPaginas ? 'not-allowed' : 'pointer'};color:#333;font-weight:500;transition:all 0.2s;opacity:${procesadosPaginaActual === totalPaginas ? '0.5' : '1'}">Siguiente →</button>`;
+      }
+      pagDiv.innerHTML = pagHtml;
+    }
+
+    document.getElementById('toggleProcesadosBtn').addEventListener('click', function() {
+      const section = document.getElementById('procesadosSection');
+      section.style.display = section.style.display === 'none' ? 'block' : 'none';
+      // Cargar datos cuando se abre la sección
+      if (section.style.display !== 'none' && procesadosData.length === 0) {
+        cargarProcesados();
+      }
+    });
+
+    async function cargarProcesados(page = 1) {
+      try {
+        const response = await fetch(`/obtener_tramites_procesados?page=${page}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          procesadosData = data.procesados;
+          procesadosPaginaActual = page;
+          document.getElementById('procesadosTotal').textContent = data.total;
+          mostrarProcesados(data.procesados, data.total);
+          
+          // Llenar dropdown de trámites
+          const selectTramite = document.getElementById('filtroProcesadoTramite');
+          if (selectTramite && data.tramites && data.tramites.length > 0) {
+            const tramiteActual = selectTramite.value;
+            selectTramite.innerHTML = '<option value="">Todos los trámites</option>';
+            data.tramites.forEach(tramite => {
+              const option = document.createElement('option');
+              option.value = tramite;
+              option.textContent = tramite;
+              selectTramite.appendChild(option);
+            });
+            // Restaurar valor anterior si existe
+            if (tramiteActual) {
+              selectTramite.value = tramiteActual;
+            }
+          }
+        } else {
+          document.getElementById('tablaProcesadosBody').innerHTML = 
+            '<tr><td colspan="4" class="vacio">Error al cargar los trámites procesados</td></tr>';
+        }
+      } catch (error) {
+        console.error('Error al cargar procesados:', error);
+        document.getElementById('tablaProcesadosBody').innerHTML = 
+          '<tr><td colspan="4" class="vacio">Error al cargar los trámites procesados</td></tr>';
+      }
+    }
+
+    function cambiarPaginaProcesados(nuevaPagina) {
+      cargarProcesados(nuevaPagina);
+    }
+
+    function aplicarFiltrosProcesados() {
+      let filtrados = procesadosData;
+
+      const tramite = document.getElementById('filtroProcesadoTramite').value;
+      if (tramite) {
+        filtrados = filtrados.filter(p => p.tramite === tramite);
+      }
+
+      const texto = document.getElementById('filtroProcesadoTexto').value.toLowerCase();
+      if (texto) {
+        filtrados = filtrados.filter(p => 
+          p.identificador.toLowerCase().includes(texto) ||
+          p.tramite.toLowerCase().includes(texto) ||
+          p.solicitud.toLowerCase().includes(texto) ||
+          p.atencion.toLowerCase().includes(texto)
+        );
+      }
+
+      procesadosFiltrados = filtrados;
+      procesadosPaginaActual = 1;
+      mostrarProcesados(filtrados, filtrados.length);
+      
+      // Actualizar el contador total de trámites procesados
+      document.getElementById('procesadosTotal').textContent = filtrados.length;
+    }
+
+    // Event listeners para filtros de procesados
+    document.addEventListener('DOMContentLoaded', function() {
+      const filtroProcesadoTramite = document.getElementById('filtroProcesadoTramite');
+      const filtroProcesadoTexto = document.getElementById('filtroProcesadoTexto');
+      const btnLimpiarProcesados = document.getElementById('btnLimpiarProcesadosFiltros');
+      const btnActualizarProcesados = document.getElementById('btnActualizarProcesados');
+
+      if (filtroProcesadoTramite) {
+        filtroProcesadoTramite.addEventListener('change', aplicarFiltrosProcesados);
+      }
+      
+      if (filtroProcesadoTexto) {
+        filtroProcesadoTexto.addEventListener('input', aplicarFiltrosProcesados);
+      }
+
+      if (btnActualizarProcesados) {
+        btnActualizarProcesados.addEventListener('click', function() {
+          btnActualizarProcesados.disabled = true;
+          btnActualizarProcesados.textContent = 'Cargando...';
+          cargarProcesados(1).then(() => {
+            btnActualizarProcesados.disabled = false;
+            btnActualizarProcesados.textContent = 'Actualizar';
+          });
+        });
+      }
+
+      if (btnLimpiarProcesados) {
+        btnLimpiarProcesados.addEventListener('click', function() {
+          if (filtroProcesadoTramite) filtroProcesadoTramite.value = '';
+          if (filtroProcesadoTexto) filtroProcesadoTexto.value = '';
+          procesadosPaginaActual = 1;
+          if (procesadosData.length > 0) {
+            mostrarProcesados(procesadosData, procesadosData.length);
+            // Restaurar el contador total al valor original
+            document.getElementById('procesadosTotal').textContent = procesadosData.length;
+          }
+        });
+      }
+    });
+
+  // SocketIO: refrescar tabla de pedidos en tiempo real
+  let socketConnected = false;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof io !== 'undefined') {
+      try {
+        const socket = io({
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: 5
+        });
+
+        socket.on('connect', function() {
+          socketConnected = true;
+          console.log('✓ Conectado a Socket.IO');
+        });
+
+        socket.on('disconnect', function() {
+          socketConnected = false;
+          console.log('✗ Desconectado de Socket.IO');
+        });
+
+        socket.on('pedido_actualizado', function(data) {
+          console.log('📡 Evento recibido: pedido_actualizado', data);
+          // Solo refrescar tabla de pedidos disponibles
+          cargarPedidos();
+        });
+
+      } catch (error) {
+        console.error('Error inicializando Socket.IO:', error);
+      }
+    } else {
+      console.warn('Socket.IO no está disponible');
+    }
+  });
+  </script>
+    <input type="file" id="archivoInput" style="display:none" accept="*/*" />
+</body>
+
+</html>
