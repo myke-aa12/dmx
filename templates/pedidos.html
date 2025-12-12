@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mis Pedidos - DIGITALMX</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+      min-height: 100vh;
+      padding: 30px 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .btn-regresar {
+      position: absolute;
+      right: 0;
+      top: 0;
+      padding: 10px 16px;
+      background: transparent;
+      border: 2px solid rgba(119, 2, 2, 0.603);
+      color: rgba(119, 2, 2, 0.603);
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.25s ease;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .btn-regresar:hover {
+      background: rgba(119, 2, 2, 0.1);
+      transform: scale(1.05);
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #611232;
+      font-weight: 700;
+    }
+
+    .filtros-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+
+    .filtros-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .filtro-grupo {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filtro-grupo label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .filtro-grupo select,
+    .filtro-grupo input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .filtro-grupo select:focus,
+    .filtro-grupo input:focus {
+      border-color: #611232;
+    }
+
+    .botones-estado {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-estado {
+      padding: 10px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.25s ease;
+      font-size: 14px;
+    }
+
+    .btn-estado.proceso {
+      color: #ff9800;
+      border-color: #ff9800;
+    }
+
+    .btn-estado.proceso.active {
+      background: #ff9800;
+      color: white;
+    }
+
+    .btn-estado.exito {
+      color: #4caf50;
+      border-color: #4caf50;
+    }
+
+    .btn-estado.exito.active {
+      background: #4caf50;
+      color: white;
+    }
+
+    .btn-estado.fracaso {
+      color: #f44336;
+      border-color: #f44336;
+    }
+
+    .btn-estado.fracaso.active {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-estado:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* TABLA DESKTOP */
+    .tabla-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    thead th {
+      background: #f8f9fa;
+      padding: 16px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    tbody td {
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+      /* Eliminar selección visual de filas, solo botones funcionan */
+      tbody tr:hover {
+        background: none !important;
+        cursor: default;
+      }
+
+    .estado-circulo {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+    }
+
+    .estado-circulo.proceso {
+      background: #ff9800;
+    }
+
+    .estado-circulo.exito {
+      background: #4caf50;
+    }
+
+    .estado-circulo.fracaso {
+      background: #f44336;
+    }
+
+    .btn-detalles {
+      padding: 8px 16px;
+      background: #611232;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: 0.2s ease;
+    }
+
+    .btn-detalles:hover {
+      background: #7d1b43;
+      transform: scale(1.05);
+    }
+
+    .vacio {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    /* RESPONSIVE MOBILE */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .header {
+        margin-bottom: 24px;
+      }
+
+      .btn-regresar {
+        position: static;
+        width: auto;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+
+      .filtros-row {
+        flex-direction: column;
+      }
+
+      .filtro-grupo {
+        min-width: 100%;
+      }
+
+      .botones-estado {
+        gap: 8px;
+      }
+
+      .btn-estado {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+
+      /* Tabla responsiva */
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0;
+      }
+
+      td {
+        padding: 6px 8px;
+        border: none;
+        text-align: left;
+      }
+
+      /* Primera columna (estado) ocupa 3 filas */
+      td:first-child {
+        grid-row: 1 / 4;
+        grid-column: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+
+      /* Columnas de contenido */
+      td:nth-child(2),
+      td:nth-child(3),
+      td:nth-child(4) {
+        grid-column: 2;
+        padding: 4px 8px;
+        background: #fff;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Identificador (negritas) */
+      td:nth-child(2) {
+        font-weight: 700;
+        font-size: 14px;
+        color: #333;
+      }
+
+      /* Trámite (sin negritas) */
+      td:nth-child(3) {
+        font-weight: normal;
+        font-size: 13px;
+        color: #666;
+      }
+
+      /* Fecha (gris) */
+      td:nth-child(4) {
+        font-weight: normal;
+        font-size: 12px;
+        color: #999;
+      }
+
+      /* Última columna (detalles) ocupa 3 filas */
+      td:last-child {
+        grid-row: 1 / 4;
+        grid-column: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+      }
+
+      .btn-detalles {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 9999;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+      position: relative;
+      animation: modalIn 0.25s ease-out;
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      border: none;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+      color: #444;
+      transition: 0.2s;
+    }
+
+    .modal-close:hover {
+      transform: scale(1.2);
+      color: #000;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #611232;
+    }
+
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      font-weight: 600;
+      font-size: 1.15em;
+            /* Resultado azul y centrado en el modal */
+            .resultado-modal-label {
+              color: #222;
+              font-weight: 600;
+              text-align: left;
+              display: block;
+              margin-bottom: 2px;
+            }
+            .resultado-modal-valor {
+              color: #1565c0;
+              text-align: center;
+              font-weight: 600;
+              font-size: 1.15em;
+              width: 100%;
+              display: block;
+              margin-bottom: 8px;
+            }
+        /* Resultado azul y centrado en el modal */
+        .resultado-modal {
+          color: #1565c0;
+          text-align: center;
+          font-weight: 600;
+          font-size: 1.15em;
+          width: 100%;
+          display: block;
+          margin-bottom: 8px;
+        }
+    }
+
+    .detalle-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detalle-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .detalle-valor {
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Mis Pedidos</h1>
+      <a href="{{ url_for('index') }}" class="btn-regresar">← Regresar</a>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros-section">
+      <div class="filtros-row">
+        <div class="filtro-grupo">
+          <label for="filtroTramite">Filtrar por trámite</label>
+          <select id="filtroTramite">
+            <option value="">Todos los trámites</option>
+            {% for tramite in tramites %}
+            <option value="{{ tramite.tramite }}">{{ tramite.tramite }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filtro-grupo" style="display:flex; flex-direction:column;">
+          <label for="filtroIdentificador">Ingresar identificador</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="filtroIdentificador" placeholder="Ej: ABCD123456HDFGRS09" style="flex:1;">
+            <button id="btnLimpiarFiltros" class="btn btn-secondary" type="button" style="padding:8px 16px;">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filtros-row">
+        <label style="width: 100%; font-weight: 600; color: #666; margin-bottom: 8px;">Filtrar por estado</label>
+        <div class="botones-estado">
+          <button class="btn-estado proceso" data-estado="1">EN PROCESO</button>
+          <button class="btn-estado exito" data-estado="2">ÉXITO</button>
+          <button class="btn-estado fracaso" data-estado="3">SIN ÉXITO</button>
+          <button class="btn-estado" data-estado="0">Ver todos</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-container">
+      <table id="tablaPedidos">
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Identificador</th>
+            <th>Trámite</th>
+            <th>Fecha</th>
+            <th>Detalles</th>
+          </tr>
+        </thead>
+        <tbody id="tablaPedidosBody">
+          <tr>
+            <td colspan="5" class="vacio">Cargando pedidos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALLES -->
+  <div id="detallesModal" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+      <h2 class="modal-title">Detalles del Pedido</h2>
+      <div class="modal-content" id="modalContent">
+        <!-- Se llenará dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pedidosData = [];
+    let estadoActivo = null;
+
+    // Cargar pedidos al abrir la página
+    async function cargarPedidos() {
+      try {
+        const response = await fetch('{{ url_for('obtener_pedidos') }}');
+        const data = await response.json();
+        pedidosData = data.pedidos || [];
+        mostrarPedidos(pedidosData);
+      } catch (error) {
+        console.error('Error al cargar pedidos:', error);
+        document.getElementById('tablaPedidosBody').innerHTML = 
+          '<tr><td colspan="5" class="vacio">Error al cargar los pedidos</td></tr>';
+      }
+    }
+
+    function mostrarPedidos(pedidos) {
+      const tbody = document.getElementById('tablaPedidosBody');
+      
+      if (pedidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="vacio">No hay pedidos</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pedidos.map(pedido => `
+        <tr>
+          <td style="pointer-events: auto;">
+            <div class="estado-circulo ${getClaseEstado(pedido.estado)}">
+              ${getIconoEstado(pedido.estado)}
+            </div>
+          </td>
+          <td style="pointer-events: auto;">${pedido.identificador}</td>
+          <td style="pointer-events: auto;">${pedido.tramite}</td>
+          <td style="pointer-events: auto;">${pedido.fecha}</td>
+          <td style="pointer-events: auto;">
+            <button class="btn-detalles" onclick="abrirDetalles(${JSON.stringify(pedido).replace(/\"/g, '&quot;')})">
+              Ver detalles
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getClaseEstado(estado) {
+      switch (parseInt(estado)) {
+        case 1: return 'proceso';
+        case 2: return 'exito';
+        case 3: return 'fracaso';
+        default: return '';
+      }
+    }
+
+    function getIconoEstado(estado) {
+      switch (parseInt(estado)) {
+        case 1: return '⏳';
+        case 2: return '✓';
+        case 3: return '✕';
+        default: return '?';
+      }
+    }
+
+    function getTextoEstado(estado) {
+      switch (parseInt(estado)) {
+        case 1: return 'En Proceso';
+        case 2: return 'Éxito';
+        case 3: return 'Sin Éxito';
+        default: return 'Desconocido';
+      }
+    }
+
+    // Filtros
+    document.getElementById('filtroTramite').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroIdentificador').addEventListener('input', aplicarFiltros);
+    document.getElementById('btnLimpiarFiltros').addEventListener('click', function() {
+      document.getElementById('filtroTramite').value = '';
+      document.getElementById('filtroIdentificador').value = '';
+      aplicarFiltros();
+    });
+
+    document.querySelectorAll('.btn-estado').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.btn-estado').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        estadoActivo = this.dataset.estado === '0' ? null : this.dataset.estado;
+        aplicarFiltros();
+      });
+    });
+
+    function aplicarFiltros() {
+      let filtrados = pedidosData;
+
+      const tramite = document.getElementById('filtroTramite').value;
+      if (tramite) {
+        filtrados = filtrados.filter(p => p.tramite === tramite);
+      }
+
+      const identificador = document.getElementById('filtroIdentificador').value.toUpperCase();
+      if (identificador) {
+        filtrados = filtrados.filter(p => p.identificador.includes(identificador));
+      }
+
+      if (estadoActivo) {
+        filtrados = filtrados.filter(p => parseInt(p.estado) === parseInt(estadoActivo));
+      }
+
+      mostrarPedidos(filtrados);
+    }
+
+    // Modal de detalles
+    function abrirDetalles(pedido) {
+      const content = document.getElementById('modalContent');
+
+      // Construir bloque de resultado primero según estado
+      let resultadoHtml = '';
+      try {
+        const res = typeof pedido.resultado === 'string' ? JSON.parse(pedido.resultado) : (pedido.resultado || {});
+        const files = Array.isArray(res.files) ? res.files : [];
+        if (parseInt(pedido.estado) === 2 && files.length > 0) {
+          // Éxito: mostrar botón de Descarga centrado
+          const key = encodeURIComponent(files[0].key);
+          resultadoHtml = `
+            <div class="detalle-row" style="border-bottom:none; width:100%; flex-direction:column; gap:8px;">
+              <span class="resultado-modal-label">Resultado:</span>
+              <div class="resultado-modal-valor" style="display:flex; justify-content:center; width:100%; padding-top:4px;">
+                <a href="/descargar_archivo?key=${key}" class="btn-detalles" target="_blank" style="min-width:160px; text-align:center;">DESCARGAR</a>
+              </div>
+            </div>`;
+        } else if (parseInt(pedido.estado) === 3) {
+          // Sin éxito: mostrar texto del comentario
+          const comentario = (typeof pedido.resultado === 'string') ? pedido.resultado : (res && res.motivo) ? res.motivo : 'Sin éxito';
+          resultadoHtml = `
+            <div class="detalle-row" style="border-bottom:none;">
+              <span class="resultado-modal-label">Resultado:</span>
+              <span class="resultado-modal-valor">${comentario}</span>
+            </div>`;
+        } else {
+          // En proceso u otro: pendiente
+          resultadoHtml = `
+            <div class="detalle-row" style="border-bottom:none;">
+              <span class="resultado-modal-label">Resultado:</span>
+              <span class="resultado-modal-valor">Pendiente</span>
+            </div>`;
+        }
+      } catch (e) {
+        // Fallback simple
+        resultadoHtml = `
+          <div class="detalle-row" style="border-bottom:none;">
+            <span class="resultado-modal-label">Resultado:</span>
+            <span class="resultado-modal-valor">${(typeof pedido.resultado === 'string') ? pedido.resultado : (pedido.resultado || 'Pendiente')}</span>
+          </div>`;
+      }
+
+      content.innerHTML = `
+        ${resultadoHtml}
+        <div class="detalle-row">
+          <span class="detalle-label">Estado:</span>
+          <span class="detalle-valor">${getTextoEstado(pedido.estado)}</span>
+        </div>
+        <div class="detalle-row">
+          <span class="detalle-label">Identificador:</span>
+          <span class="detalle-valor">${pedido.identificador}</span>
+        </div>
+        <div class="detalle-row">
+          <span class="detalle-label">Trámite:</span>
+          <span class="detalle-valor">${pedido.tramite}</span>
+        </div>
+        <div class="detalle-row">
+          <span class="detalle-label">Fecha:</span>
+          <span class="detalle-valor">${pedido.fecha}</span>
+        </div>
+        <div class="detalle-row">
+          <span class="detalle-label">Precio:</span>
+          <span class="detalle-valor">${parseFloat(pedido.precio).toFixed(2)}</span>
+        </div>
+      `;
+      document.getElementById('detallesModal').classList.add('active');
+    }
+
+    function cerrarModal() {
+      document.getElementById('detallesModal').classList.remove('active');
+    }
+
+    // Cerrar modal al hacer click fuera
+    // document.getElementById('detallesModal').addEventListener('click', function(e) {
+    //   if (e.target === this) cerrarModal();
+    // });
+
+    // Cargar pedidos al abrir
+    document.addEventListener('DOMContentLoaded', cargarPedidos);
+  // SocketIO: refrescar tabla en tiempo real
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof io !== 'undefined') {
+      const socket = io();
+      socket.on('pedido_actualizado', function(data) {
+        cargarPedidos();
+      });
+    }
+  });
+  </script>
+</body>
+
+</html>
