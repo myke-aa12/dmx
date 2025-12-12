@@ -474,20 +474,42 @@
     submitBtn.classList.add('loading');
 
     try {
+      console.log('[LOGIN] Form submitted. Email:', email);
       const response = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
 
+      console.log('[LOGIN] Fetch completed. Status:', response.status);
       const data = await response.json();
+      console.log('[LOGIN] Response JSON:', data);
 
       if (data.success) {
+        // Mostrar mensaje de éxito
         successMessage.classList.add('show');
+        
+        // Obtener la URL de redirección
+        const redirectUrl = data.redirect || '/mis-pedidos';
+        console.log('[LOGIN] Success! Redirecting to:', redirectUrl);
+        console.log('[LOGIN] Response data:', data);
+        
+        // Redirigir después de un pequeño delay para que se vea el mensaje
         setTimeout(() => {
-          window.location.href = data.redirect || '{{ url_for("admin_usuario_panel") }}';
-        }, 1500);
+          console.log('[LOGIN] Performing redirect to:', redirectUrl);
+          // Usar una redirección robusta
+          try {
+            window.location.href = redirectUrl;
+          } catch (e) {
+            console.error('[LOGIN] Error during redirect:', e);
+            // Fallback: si window.location.href falla, usar window.location.replace
+            window.location.replace(redirectUrl);
+          }
+        }, 1000);
       } else {
+        // Mostrar error
+        console.log('[LOGIN] Login failed:', data.message);
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
         Swal.fire({
@@ -498,12 +520,13 @@
         });
       }
     } catch (error) {
+      console.error('Error en login:', error);
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'Error al procesar la solicitud',
+        text: 'Error al procesar la solicitud: ' + error.message,
         confirmButtonColor: '#ca0202'
       });
     }
