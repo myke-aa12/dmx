@@ -47,11 +47,14 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB máximo por request
 
-# Configuración de bases de datos
-DATABASE = os.environ.get('DATABASE_PATH', 'usuarios.db')
-TRAMITES_DB = os.environ.get('TRAMITES_DATABASE_PATH', 'tramites.db')
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), os.environ.get('UPLOAD_DIR', 'uploads'))
-BACKUP_DIR = os.path.join(os.path.dirname(__file__), os.environ.get('BACKUP_DIR', 'backups'))
+# Obtener directorio base de la aplicación
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Configuración de bases de datos (rutas absolutas)
+DATABASE = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'usuarios.db'))
+TRAMITES_DB = os.environ.get('TRAMITES_DATABASE_PATH', os.path.join(BASE_DIR, 'tramites.db'))
+UPLOAD_DIR = os.path.join(BASE_DIR, os.environ.get('UPLOAD_DIR', 'uploads'))
+BACKUP_DIR = os.path.join(BASE_DIR, os.environ.get('BACKUP_DIR', 'backups'))
 
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 Path(BACKUP_DIR).mkdir(parents=True, exist_ok=True)
