@@ -611,6 +611,7 @@ def registro():
     return render_template('registro.html')
 
 @app.route('/login', methods=['POST'])
+@csrf.exempt  # Permite JSON login sin CSRF token
 def login():
     """Maneja el inicio de sesión"""
     if request.method == 'POST':

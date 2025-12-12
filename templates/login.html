@@ -474,7 +474,7 @@
     submitBtn.classList.add('loading');
 
     try {
-      const response = await fetch('/app/resources/proveedor', {
+      const response = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
